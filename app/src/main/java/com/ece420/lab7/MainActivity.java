@@ -68,8 +68,8 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
 
     private int opencv_loaded_flag = -1;
     private int start_flag = -1;
-    private int transWidth = 600;
-    private int transHeight = 600;
+    private final int transWidth = 600;
+    private final int transHeight = 600;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -112,12 +112,21 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
             @Override
             public void onClick(View v) {
                 if (start_flag == -1) return;
-                Mat edges = new Mat();
-                Imgproc.Canny(mGray, edges,5, 15, 7, false);
 
+                // Create a copy for stability in real-time system
+                Mat grayCopy = mGray.clone();
+                Mat rgbaCopy = mRgba.clone();
+
+                // Get canny edges
+                Mat edges = new Mat();
+                Imgproc.Canny(grayCopy, edges,50, 150, 5, false);
+
+                // Get contours
                 List<MatOfPoint> contours = new ArrayList<>();
                 Mat hierarchy = new Mat();
                 Imgproc.findContours(edges, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
+
+                // Get outer-contours by maximized area
                 MatOfPoint outerContour = null;
                 double maxArea = -1;
                 for (MatOfPoint contour : contours) {
@@ -128,6 +137,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                     }
                 }
 
+                // Calculate hull convex
                 MatOfInt hull = new MatOfInt();
                 Imgproc.convexHull(outerContour, hull);
 
@@ -137,6 +147,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                     hullPoints[i] = outerContour.toArray()[index];
                 }
 
+                // Find four corner points
                 Point topLeft = hullPoints[0];
                 Point topRight = hullPoints[0];
                 Point bottomLeft = hullPoints[0];
@@ -165,14 +176,9 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                 };
                 pts_src.fromArray(corner_points_array);
 
-                Log.d("coord topleft", "(" + topLeft.x + "," + topLeft.y + ")");
-                Log.d("coord topright", "(" + topRight.x + "," + topRight.y + ")");
-                Log.d("coord botleft", "(" + bottomLeft.x + "," + bottomLeft.y + ")");
-                Log.d("coord botright", "(" + bottomRight.x + "," + bottomRight.y + ")");
-
                 // Perspective transform
                 Mat perspective_matrix = Imgproc.getPerspectiveTransform(pts_src, new MatOfPoint2f(pts_dst));
-                Imgproc.warpPerspective(mRgba, transformRgba, perspective_matrix, new Size(transWidth, transHeight));
+                Imgproc.warpPerspective(rgbaCopy, transformRgba, perspective_matrix, new Size(transWidth, transHeight));
 
                 // Image View on app
                 ImageView imageView = (ImageView) findViewById(R.id.transformView);
