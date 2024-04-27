@@ -2,15 +2,14 @@
 
 buildscript {
     ext {
-        agp_version = '8.3.1'
-        agp_version1 = '8.3.2'
+        agp_version = '8.3.2'
     }
     repositories {
         jcenter()
         google()
     }
     dependencies {
-        classpath "com.android.tools.build:gradle:$agp_version1"
+        classpath "com.android.tools.build:gradle:$agp_version"
 
         // NOTE: Do not place your application dependencies here; they belong
         // in the individual module build.gradle files

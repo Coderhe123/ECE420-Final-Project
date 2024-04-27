@@ -1,4 +1,4 @@
-package com.ece420.lab7;
+package com.ece420.finalproject;
 
 import static org.opencv.imgproc.Imgproc.Canny;
 import static org.opencv.imgproc.Imgproc.findContours;
@@ -16,16 +16,10 @@ import android.util.Pair;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
-import android.widget.GridLayout;
-import android.widget.SeekBar;
 import android.widget.TextView;
-import android.widget.GridLayout;
-import android.view.Gravity;
-import android.util.TypedValue;
 import android.widget.ImageView;
 import android.graphics.Bitmap;
 import android.content.res.Resources;
-import android.os.Environment;
 
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.CameraBridgeViewBase;
@@ -34,23 +28,15 @@ import org.opencv.android.OpenCVLoader;
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
-import org.opencv.core.MatOfByte;
 import org.opencv.core.Point;
 import org.opencv.core.Rect;
-import org.opencv.core.Rect2d;
-import org.opencv.core.Scalar;
 import org.opencv.imgproc.Imgproc;
-import org.opencv.text.Text;
-import org.opencv.tracking.TrackerKCF;
 import org.opencv.core.MatOfPoint;
 import org.opencv.core.MatOfInt;
 import org.opencv.core.Size;
 import org.opencv.core.MatOfPoint2f;
 import org.opencv.android.Utils;
-import org.opencv.imgcodecs.Imgcodecs;
 
-import java.io.Console;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -128,6 +114,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                 if (start_flag == -1) return;
                 getTransformView();
                 DigitRecognition();
+                getSolution();
             }
         });
 
@@ -213,6 +200,11 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
     }
 
     public void LoadLib() {
+        // Test Game2048 AI algorithm
+//        Game2048 game = new Game2048();
+//        game.playWithAI();
+
+
         Mat2048 = new int[HEIGHT2048][WIDTH2048];
         // Initialize original matrix value to 0
         for (int i = 0; i < HEIGHT2048; i++) {
@@ -241,8 +233,6 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
             Imgproc.cvtColor(template_, template_, Imgproc.COLOR_RGBA2GRAY);
             Templates.add(new Pair<>(num, template_));
 
-            Log.d("check template sizing", "(" + template_.width() + "," + template_.height() + ")");
-            Log.d("check template type", template_.type() + " ");
             num *= 2;
         }
     }
@@ -334,6 +324,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         final int PerDigitHeight = transHeight / HEIGHT2048;
         for (int row = 0; row < HEIGHT2048; row++) {
             for (int col = 0; col < WIDTH2048; col++) {
+
                 // Calculate ROI coordinates
                 int x = col * PerDigitWidth, y = row * PerDigitHeight;
                 Rect roi = new Rect(x, y, PerDigitWidth, PerDigitHeight);
@@ -344,11 +335,8 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                     int num = pair.first;
                     Mat template = pair.second;
                     Mat result = new Mat();
-                    Log.d("img type, dim", croppedImage.type() + " " + croppedImage.dims());
-                    Log.d("templ type, dim", template.type() + " " + template.dims());
 
-                    Log.d("img size", "("+croppedImage.width()+","+croppedImage.height()+")");
-                    Log.d("templ size", "("+template.width()+","+template.height()+")");
+                    // Match with template
                     Imgproc.matchTemplate(croppedImage, template, result, Imgproc.TM_CCOEFF_NORMED);
                     Core.MinMaxLocResult mmr = Core.minMaxLoc(result);
                     double maxVal = mmr.maxVal;
@@ -367,11 +355,13 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                     }
                 }
 
+                // Claim it to be a number if maxVal >= 0.6
                 int result = (maxVal >= 0.6) ? (bestIndex ) : 0;
                 Mat2048[row][col] = result;
             }
         }
 
+        // Visual Effect, write on the text view
         Resources resources = getResources();
         for (int i = 0; i < HEIGHT2048; i++) {
             for (int j = 0; j < WIDTH2048; j++) {
@@ -382,5 +372,24 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                 else textElement.setText(String.valueOf(Mat2048[i][j]));
             }
         }
+    }
+
+    public void getSolution() {
+        if (Mat2048.length != HEIGHT2048 || Mat2048[0].length != WIDTH2048) return;
+        Game2048 game = new Game2048(Mat2048);
+        int action = game.AImove();
+        TextView textLeft= (TextView) findViewById(R.id.Left);
+        TextView textRight = (TextView) findViewById(R.id.Right);
+        TextView textUp= (TextView) findViewById(R.id.Up);
+        TextView textDown = (TextView) findViewById(R.id.Down);
+
+        textLeft.setBackgroundResource(R.drawable.grid_border);
+        textRight.setBackgroundResource(R.drawable.grid_border);
+        textUp.setBackgroundResource(R.drawable.grid_border);
+        textDown.setBackgroundResource(R.drawable.grid_border);
+        if (action == 0) textLeft.setBackgroundResource(R.drawable.red_border);
+        else if (action == 1) textRight.setBackgroundResource(R.drawable.red_border);
+        else if (action == 2) textUp.setBackgroundResource(R.drawable.red_border);
+        else if (action == 3) textDown.setBackgroundResource(R.drawable.red_border);
     }
 }

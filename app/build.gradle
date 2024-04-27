@@ -4,7 +4,7 @@ android {
     compileSdkVersion 25
 
     defaultConfig {
-        applicationId "com.ece420.lab7"
+        applicationId "com.ece420.finalproject"
         minSdkVersion 23
         targetSdkVersion 25
         versionCode 1
@@ -16,7 +16,7 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
-    namespace "com.ece420.lab7"
+    namespace "com.ece420.finalproject"
 }
 
 dependencies {
